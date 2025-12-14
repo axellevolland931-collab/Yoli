@@ -1,46 +1,17 @@
-// mobile_app/lib/models/energy_model.dart (Дополнение)
+# ✨ aythena-digital-postcard-studio: Конструктор Цифровых Открыток
 
-// ... (FuelType, ConnectorType, PortStatus, HazardLevel, SearchMode, FuelPrice, ChargingPort - остаются прежними) ...
+Этот репозиторий содержит код мобильного клиента (Flutter) для создания персонализированных цифровых открыток. Основной фокус — на гибком управлении слоями, высококачественном рендеринге и богатой библиотеке ассетов.
 
-class RouteDetails {
-  final Duration estimatedTravelTime; // ETA до станции
-  final double distanceKm;
-  
-  RouteDetails({required this.estimatedTravelTime, required this.distanceKm});
-}
+## Архитектура
+* **Frontend:** Flutter/Dart (Riverpod, Custom Painter/Canvas API, Layer Management)
+* **Backend:** Python/Flask Mock (API для каталога шаблонов, шрифтов и стикеров)
 
-class UnifiedStation {
-  // ... (id, name, brand, latitude, longitude, fuelPrices, chargingPorts, hazardLevel - остаются прежними) ...
-  
-  // Новые поля для рейтингов и маршрута
-  final double overallQualityScore; // 0.0 - 10.0: Комплайнс, Сервис, Актуальность
-  final RouteDetails? routeInfo; // Информация о маршруте до станции
-  
-  // Добавляем прогноз доступности портов (для EV)
-  final double predictivePortAvailability; // Вероятность, что порт будет свободен к ETA (0.0 - 1.0)
+## 🔑 Ключевые принципы
+1.  **Layered Composition:** Открытка хранится как массив слоев, что обеспечивает легкое редактирование (перемещение, поворот, масштабирование).
+2.  **High-Fidelity Rendering:** Использование Flutter Canvas для быстрого и точного рендеринга финального изображения.
+3.  **Asset Management:** Эффективное кеширование графических элементов (шрифты, стикеры) для мгновенного доступа.
+4.  **Template-Driven Design:** Возможность быстрого старта с готового, стилизованного шаблона.
 
-  UnifiedStation({
-    // ... (Обязательные поля) ...
-    this.overallQualityScore = 0.0,
-    this.routeInfo,
-    this.predictivePortAvailability = 0.0,
-  });
+---
 
-  UnifiedStation copyWith({
-    List<FuelPrice>? fuelPrices, 
-    List<ChargingPort>? chargingPorts,
-    double? overallQualityScore,
-    RouteDetails? routeInfo,
-    double? predictivePortAvailability,
-  }) {
-    return UnifiedStation(
-      id: id, name: name, brand: brand, latitude: latitude, longitude: longitude, 
-      fuelPrices: fuelPrices ?? this.fuelPrices,
-      chargingPorts: chargingPorts ?? this.chargingPorts,
-      hazardLevel: hazardLevel,
-      overallQualityScore: overallQualityScore ?? this.overallQualityScore,
-      routeInfo: routeInfo ?? this.routeInfo,
-      predictivePortAvailability: predictivePortAvailability ?? this.predictivePortAvailability,
-    );
-  }
-}
+## 📂 Структура проекта
