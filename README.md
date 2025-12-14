@@ -7,7 +7,6 @@ final initialProfile = UserProfile(
   userId: 'U-001',
   preferredGenres: ['Rock', 'Indie', 'Alternative'],
   followingArtistIds: ['A-101', 'A-205'],
-);
 
 final userProfileProvider = StateNotifierProvider<UserProfileNotifier, UserProfile>((ref) {
   return UserProfileNotifier(initialProfile);
@@ -22,11 +21,7 @@ class UserProfileNotifier extends StateNotifier<UserProfile> {
         userId: state.userId,
         preferredGenres: state.preferredGenres,
         followingArtistIds: [...state.followingArtistIds, artistId],
-      );
-      // В реальной жизни: отправить на сервер для сохранения
-      print('PROFILE: Подписка на артиста $artistId оформлена.');
-    }
-  }
+      )
   
   void unfollowArtist(String artistId) {
     state = UserProfile(
