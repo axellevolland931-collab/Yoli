@@ -1,0 +1,130 @@
+// mobile_app/lib/providers/checkout_builder_provider.dart
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../models/ticket_model.dart';
+import '../repositories/inventory_repository.dart';
+import '../services/dynamic_pricing_service.dart';
+import '../services/payment_gateway_service.dart';
+import 'dart:async';
+
+final pricingService = Provider((ref) => DynamicPricingService());
+final paymentService = Provider((ref) => PaymentGatewayService());
+
+class CheckoutState {
+  final Reservation? reservation;
+  final FinalTicket? finalTicket;
+  final String? errorMessage;
+  final bool isLoading;
+
+  CheckoutState({this.reservation, this.finalTicket, this.errorMessage, this.isLoading = false});
+  
+  CheckoutState copyWith({Reservation? reservation, FinalTicket? finalTicket, String? errorMessage, bool? isLoading}) {
+    return CheckoutState(
+      reservation: reservation ?? this.reservation,
+      finalTicket: finalTicket ?? this.finalTicket,
+      errorMessage: errorMessage,
+      isLoading: isLoading ?? this.isLoading,
+    );
+  }
+}
+
+final checkoutBuilderProvider = StateNotifierProvider.autoDispose<CheckoutBuilderNotifier, CheckoutState>((ref) {
+  return CheckoutBuilderNotifier(ref);
+});
+
+class CheckoutBuilderNotifier extends StateNotifier<CheckoutState> {
+  final Ref _ref;
+  Timer? _reservationTimer;
+
+  CheckoutBuilderNotifier(this._ref) : super(CheckoutState());
+
+  // --- ШАГ 1: Инициализация и Блокировка Инвентаря (Locking) ---
+  Future<void> startCheckout({required Event event, required EventTicket ticket}) async {
+    state = state.copyWith(isLoading: true, errorMessage: null);
+    
+    final inventoryRepo = _ref.read(inventoryRepositoryProvider);
+    final pricing = _ref.read(pricingService);
+    
+    // Получаем текущее состояние инвентаря и рассчитываем финальную цену
+    final supply = event.inventory[ticket.ticketId.split('-').first]!;
+    final finalPrice = pricing.getFinalPrice(ticket: ticket, supply: supply, eventDate: event.date);
+
+    try {
+      // 1. Блокировка
+      final reservation = await inventoryRepo.lockTicket(event.id, ticket.ticketId, finalPrice);
+      
+      state = state.copyWith(reservation: reservation, isLoading: false);
+      
+      // 2. Запуск таймера для истечения резерва
+      _startReservationTimer(reservation);
+      
+    } catch (e) {
+      state = state.copyWith(errorMessage: e.toString(), isLoading: false);
+    }
+  }
+  
+  void _startReservationTimer(Reservation reservation) {
+    _reservationTimer?.cancel();
+    final duration = reservation.expiresAt.difference(DateTime.now());
+    
+    _reservationTimer = Timer(duration, () {
+      _handleReservationExpired(reservation);
+    });
+    print('RESERVATION: Таймер запущен, истечет через ${duration.inSeconds} сек.');
+  }
+
+  void _handleReservationExpired(Reservation reservation) {
+    // 1. Разблокировка билета
+    _ref.read(inventoryRepositoryProvider).unlockTicket(reservation);
+    
+    // 2. Обновление состояния
+    state = CheckoutState(
+      errorMessage: 'Время резервирования истекло (${reservation.reservationToken}). Билет разблокирован.',
+    );
+  }
+
+  // --- ШАГ 2: Финальная Покупка и Генерация Ключа ---
+  Future<void> finalizePurchase(String paymentMethod) async {
+    final reservation = state.reservation;
+    if (reservation == null || reservation.status == ReservationStatus.expired) return;
+
+    state = state.copyWith(isLoading: true, errorMessage: null);
+    
+    final payment = _ref.read(paymentService);
+
+    try {
+      // 1. Имитация платежа
+      final transactionId = await payment.processPayment(reservation.finalPrice, paymentMethod);
+      
+      // 2. Сервер подтверждает, что заблокированный билет стал проданным.
+      // В реальной жизни здесь будет запрос к API для "COMMIT"
+      
+      // 3. Генерация Digital Key (QR/Barcode)
+      final digitalKey = 'AUTHENA-${transactionId}-${reservation.reservationToken}'; 
+      
+      final finalTicket = FinalTicket(
+        transactionId: transactionId,
+        reservation: reservation.copyWith(status: ReservationStatus.confirmed),
+        digitalKey: digitalKey,
+      );
+      
+      // 4. Остановка таймера и обновление состояния
+      _reservationTimer?.cancel();
+      state = state.copyWith(finalTicket: finalTicket, isLoading: false);
+
+    } catch (e) {
+      // Платеж не прошел, разблокируем билет
+      _ref.read(inventoryRepositoryProvider).unlockTicket(reservation);
+      state = state.copyWith(errorMessage: 'Ошибка платежа: ${e.toString()}', isLoading: false);
+    }
+  }
+  
+  @override
+  void dispose() {
+    _reservationTimer?.cancel();
+    // Если резерв активен при закрытии экрана, его нужно разблокировать!
+    if (state.reservation != null && state.finalTicket == null) {
+      _ref.read(inventoryRepositoryProvider).unlockTicket(state.reservation!);
+    }
+    super.dispose();
+  }
+}
