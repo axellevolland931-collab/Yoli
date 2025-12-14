@@ -1,37 +1,17 @@
-// mobile_app/lib/models/fuel_model.dart (Дополнение)
-// ... (FuelType, ServiceType, HazardLevel, FuelPrice, HazardScore - остаются прежними) ...
+# ⚡ aythena-universal-energy-hub: Универсальный Поиск Энергостанций (Топливо + EV Зарядка)
 
-enum CrowdLevel { empty, moderate, busy, full }
+Этот репозиторий представляет собой эволюцию приложения для поиска заправок, теперь интегрирующую поиск зарядных станций для электромобилей. Ключевой акцент сделан на совместимости, скорости зарядки, актуальности цен и соблюдении требований безопасности Authena.
 
-class DynamicStationData {
-  final CrowdLevel crowdLevel;
-  final Duration estimatedWaitTime; // Время ожидания у колонки
-  final double priceChangeProbability; // Вероятность изменения цены в ближайший час (0.0 - 1.0)
-  
-  DynamicStationData({
-    required this.crowdLevel,
-    required this.estimatedWaitTime,
-    this.priceChangeProbability = 0.0,
-  });
-}
+## Архитектура
+* **Frontend:** Flutter/Dart (Riverpod, Geo-Aware Filtering, Dual-Mode Search)
+* **Backend:** Python/Flask Mock (API для цен на топливо, данных станций, EV-портов и Комплайнса)
 
-class FuelStation {
-  // ... (id, name, brand, latitude, longitude, prices, services, hazardCompliance - остаются прежними) ...
-  final DynamicStationData? dynamicData; // Динамические данные о загруженности и прогнозе
+## 🔑 Ключевые принципы
+1.  **Dual-Mode Search:** Единая система поиска для традиционных заправок и EV-станций.
+2.  **EV-Specific Filtering:** Фильтрация по типу разъема (Type 2, CCS, CHAdeMO) и мощности зарядки.
+3.  **Port Availability Stream:** Имитация потока данных о доступности конкретных зарядных портов в реальном времени.
+4.  **Efficiency Scoring:** Расширенная сортировка, учитывающая цену, время ожидания (очередь) и скорость зарядки (для EV).
 
-  FuelStation({
-    // ... (Обязательные поля) ...
-    this.dynamicData,
-  });
+---
 
-  // copyWith для обновления динамического состояния (цены, очереди, прогноз)
-  FuelStation copyWith({List<FuelPrice>? prices, DynamicStationData? dynamicData}) {
-    return FuelStation(
-      id: id, name: name, brand: brand, latitude: latitude, longitude: longitude, 
-      prices: prices ?? this.prices, services: services, 
-      hazardCompliance: hazardCompliance,
-      dynamicData: dynamicData ?? this.dynamicData,
-    );
-  }
-}
-// ... (FuelFilters остается прежним) ...
+## 📂 Структура проекта
