@@ -1,34 +1,37 @@
-// mobile_app/lib/providers/user_profile_provider.dart
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/concert_model.dart';
+// mobile_app/lib/models/fuel_model.dart (Дополнение)
+// ... (FuelType, ServiceType, HazardLevel, FuelPrice, HazardScore - остаются прежними) ...
 
-// Имитация данных профиля
-final initialProfile = UserProfile(
-  userId: 'U-001',
-  preferredGenres: ['Rock', 'Indie', 'Alternative'],
-  followingArtistIds: ['A-101', 'A-205'],
+enum CrowdLevel { empty, moderate, busy, full }
 
-final userProfileProvider = StateNotifierProvider<UserProfileNotifier, UserProfile>((ref) {
-  return UserProfileNotifier(initialProfile);
-});
-
-class UserProfileNotifier extends StateNotifier<UserProfile> {
-  UserProfileNotifier(UserProfile initialProfile) : super(initialProfile);
+class DynamicStationData {
+  final CrowdLevel crowdLevel;
+  final Duration estimatedWaitTime; // Время ожидания у колонки
+  final double priceChangeProbability; // Вероятность изменения цены в ближайший час (0.0 - 1.0)
   
-  void followArtist(String artistId) {
-    if (!state.followingArtistIds.contains(artistId)) {
-      state = UserProfile(
-        userId: state.userId,
-        preferredGenres: state.preferredGenres,
-        followingArtistIds: [...state.followingArtistIds, artistId],
-      )
-  
-  void unfollowArtist(String artistId) {
-    state = UserProfile(
-      userId: state.userId,
-      preferredGenres: state.preferredGenres,
-      followingArtistIds: state.followingArtistIds.where((id) => id != artistId).toList(),
+  DynamicStationData({
+    required this.crowdLevel,
+    required this.estimatedWaitTime,
+    this.priceChangeProbability = 0.0,
+  });
+}
+
+class FuelStation {
+  // ... (id, name, brand, latitude, longitude, prices, services, hazardCompliance - остаются прежними) ...
+  final DynamicStationData? dynamicData; // Динамические данные о загруженности и прогнозе
+
+  FuelStation({
+    // ... (Обязательные поля) ...
+    this.dynamicData,
+  });
+
+  // copyWith для обновления динамического состояния (цены, очереди, прогноз)
+  FuelStation copyWith({List<FuelPrice>? prices, DynamicStationData? dynamicData}) {
+    return FuelStation(
+      id: id, name: name, brand: brand, latitude: latitude, longitude: longitude, 
+      prices: prices ?? this.prices, services: services, 
+      hazardCompliance: hazardCompliance,
+      dynamicData: dynamicData ?? this.dynamicData,
     );
-    print('PROFILE: Отписка от артиста $artistId оформлена.');
   }
 }
+// ... (FuelFilters остается прежним) ...
