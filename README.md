@@ -1,17 +1,39 @@
-# ⛽ aythena-fuel-finder-compliance: Поиск Заправок с Комплайнсом Цен и Безопасности
+// mobile_app/lib/providers/user_profile_provider.dart
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../models/concert_model.dart';
 
-Этот репозиторий содержит код мобильного клиента (Flutter) для поиска ближайших заправочных станций, с акцентом на проверку актуальности цен, безопасность (Hazard Compliance) и персонализированную фильтрацию.
+// Имитация данных профиля
+final initialProfile = UserProfile(
+  userId: 'U-001',
+  preferredGenres: ['Rock', 'Indie', 'Alternative'],
+  followingArtistIds: ['A-101', 'A-205'],
+);
 
-## Архитектура
-* **Frontend:** Flutter/Dart (Riverpod, Real-time Price Integration, Compliance Layer)
-* **Backend:** Python/Flask Mock (API для цен на топливо, данных станций и Hazard Compliance)
+final userProfileProvider = StateNotifierProvider<UserProfileNotifier, UserProfile>((ref) {
+  return UserProfileNotifier(initialProfile);
+});
 
-## 🔑 Ключевые принципы
-1.  **Price Freshness Guarantee:** Цена на топливо должна быть верифицирована как "свежая" (обновлена в течение последних 30 минут).
-2.  **Hazard Compliance Score:** Каждая заправка должна иметь публичный рейтинг безопасности Authena.
-3.  **Type-Aware Search:** Эффективная фильтрация по специфическим типам топлива (Дизель, АИ-95, EV-зарядка).
-4.  **Geo-Aware Filtering:** Использование гео-координат для быстрого поиска ближайших станций.
-
----
-
-## 📂 Структура проекта
+class UserProfileNotifier extends StateNotifier<UserProfile> {
+  UserProfileNotifier(UserProfile initialProfile) : super(initialProfile);
+  
+  void followArtist(String artistId) {
+    if (!state.followingArtistIds.contains(artistId)) {
+      state = UserProfile(
+        userId: state.userId,
+        preferredGenres: state.preferredGenres,
+        followingArtistIds: [...state.followingArtistIds, artistId],
+      );
+      // В реальной жизни: отправить на сервер для сохранения
+      print('PROFILE: Подписка на артиста $artistId оформлена.');
+    }
+  }
+  
+  void unfollowArtist(String artistId) {
+    state = UserProfile(
+      userId: state.userId,
+      preferredGenres: state.preferredGenres,
+      followingArtistIds: state.followingArtistIds.where((id) => id != artistId).toList(),
+    );
+    print('PROFILE: Отписка от артиста $artistId оформлена.');
+  }
+}
