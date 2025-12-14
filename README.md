@@ -1,17 +1,46 @@
-# ⚡ aythena-universal-energy-hub: Универсальный Поиск Энергостанций (Топливо + EV Зарядка)
+// mobile_app/lib/models/energy_model.dart (Дополнение)
 
-Этот репозиторий представляет собой эволюцию приложения для поиска заправок, теперь интегрирующую поиск зарядных станций для электромобилей. Ключевой акцент сделан на совместимости, скорости зарядки, актуальности цен и соблюдении требований безопасности Authena.
+// ... (FuelType, ConnectorType, PortStatus, HazardLevel, SearchMode, FuelPrice, ChargingPort - остаются прежними) ...
 
-## Архитектура
-* **Frontend:** Flutter/Dart (Riverpod, Geo-Aware Filtering, Dual-Mode Search)
-* **Backend:** Python/Flask Mock (API для цен на топливо, данных станций, EV-портов и Комплайнса)
+class RouteDetails {
+  final Duration estimatedTravelTime; // ETA до станции
+  final double distanceKm;
+  
+  RouteDetails({required this.estimatedTravelTime, required this.distanceKm});
+}
 
-## 🔑 Ключевые принципы
-1.  **Dual-Mode Search:** Единая система поиска для традиционных заправок и EV-станций.
-2.  **EV-Specific Filtering:** Фильтрация по типу разъема (Type 2, CCS, CHAdeMO) и мощности зарядки.
-3.  **Port Availability Stream:** Имитация потока данных о доступности конкретных зарядных портов в реальном времени.
-4.  **Efficiency Scoring:** Расширенная сортировка, учитывающая цену, время ожидания (очередь) и скорость зарядки (для EV).
+class UnifiedStation {
+  // ... (id, name, brand, latitude, longitude, fuelPrices, chargingPorts, hazardLevel - остаются прежними) ...
+  
+  // Новые поля для рейтингов и маршрута
+  final double overallQualityScore; // 0.0 - 10.0: Комплайнс, Сервис, Актуальность
+  final RouteDetails? routeInfo; // Информация о маршруте до станции
+  
+  // Добавляем прогноз доступности портов (для EV)
+  final double predictivePortAvailability; // Вероятность, что порт будет свободен к ETA (0.0 - 1.0)
 
----
+  UnifiedStation({
+    // ... (Обязательные поля) ...
+    this.overallQualityScore = 0.0,
+    this.routeInfo,
+    this.predictivePortAvailability = 0.0,
+  });
 
-## 📂 Структура проекта
+  UnifiedStation copyWith({
+    List<FuelPrice>? fuelPrices, 
+    List<ChargingPort>? chargingPorts,
+    double? overallQualityScore,
+    RouteDetails? routeInfo,
+    double? predictivePortAvailability,
+  }) {
+    return UnifiedStation(
+      id: id, name: name, brand: brand, latitude: latitude, longitude: longitude, 
+      fuelPrices: fuelPrices ?? this.fuelPrices,
+      chargingPorts: chargingPorts ?? this.chargingPorts,
+      hazardLevel: hazardLevel,
+      overallQualityScore: overallQualityScore ?? this.overallQualityScore,
+      routeInfo: routeInfo ?? this.routeInfo,
+      predictivePortAvailability: predictivePortAvailability ?? this.predictivePortAvailability,
+    );
+  }
+}
